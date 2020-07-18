@@ -4,7 +4,7 @@ import random
 import sys
 import copy
 import os
-import numpy as np
+import numpy
 import cv2
 
 # This function open the image as grayscale with opencv from the given filepath
@@ -80,4 +80,69 @@ if __name__ == "__main__" :
 
 	line, col = count_blocks(img_black_white)
 
-			
+	height = len(img_black_white)
+	width = len(img_black_white[0])
+
+	case_length = 30 # Every pixel of my src img will be represented by height/width * x pixel case on my result image
+
+	img = numpy.zeros((height*case_length+200,width*case_length+200, 3),numpy.uint8)
+	img.fill(255)
+
+	cumulated_case_length = 0	
+	offset = int(len(img)*3/20) # value, in pixel, of the grid translation from (0, 0)
+	for row in range(len(img_black_white)+1) :
+
+		x_start = offset + cumulated_case_length
+		y_start = offset
+		
+		x_end = offset + cumulated_case_length 
+		y_end = case_length * len(img_black_white) + offset
+
+		start_point = (x_start, y_start)
+		end_point = (x_end, y_end)
+		cv2.line(
+			img,
+			start_point,
+			end_point,
+			(0, 0, 0),
+			1
+		)
+
+		cumulated_case_length += case_length
+
+	cumulated_case_length = 0	
+	for column in range(len(img_black_white[0])+1) :
+
+		x_start = offset 
+		y_start = offset + cumulated_case_length
+		
+		x_end = case_length * len(img_black_white[0]) + offset
+		y_end = offset + cumulated_case_length
+
+		start_point = (x_start, y_start)
+		end_point = (x_end, y_end)
+		cv2.line(
+			img,
+			start_point,
+			end_point,
+			(0, 0, 0),
+			1
+		)
+
+		cumulated_case_length += case_length
+
+	position = (10, 30)
+	cv2.putText(
+		img, #numpy array on which text is written
+		"Python Examples", #text
+		position, #position at which writing has to start
+		cv2.FONT_HERSHEY_SIMPLEX, #font family
+		0.5, #font size
+		(0, 0, 0, 0), #font color
+		1 #font stroke
+	)
+
+
+	cv2.imwrite('picross.png', img)
+	cv2.imshow('image',img)
+	cv2.waitKey(0)
