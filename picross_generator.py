@@ -64,6 +64,47 @@ def count_blocks(img:List[List]) -> Tuple[List, List] :
 
 	return (line_blocks, col_blocks)
 
+def draw_line(img:List[List], start_point:Tuple[int, int], end_point:Tuple[int, int]) :
+
+	cv2.line(
+			img,
+			start_point,
+			end_point,
+			(0, 0, 0),
+			1
+		)
+
+def draw_multiple_lines(target_img:List[List], is_row_lines:bool, offset:int, lines_in_img:int, case_length:int):
+	
+	cumulated_case_length = 0	
+	
+	for line in range(lines_in_img+1) :
+
+		x_start = y_start = x_end = y_end = offset
+
+		if is_row_lines : # are we drawing the columns or the rows of the grid ?
+			x_start += cumulated_case_length
+
+			x_end += cumulated_case_length 
+			y_end += case_length * lines_in_img
+		else :
+			y_start += cumulated_case_length
+		
+			x_end += case_length * lines_in_img
+			y_end += cumulated_case_length
+
+		start_point = (x_start, y_start)
+		end_point = (x_end, y_end)
+		draw_line(target_img, start_point, end_point)
+
+		cumulated_case_length += case_length
+
+def draw_picross_grid(img_black_white:List[List], target_img:List[List], case_length:int) :
+	offset = int(len(target_img)*3/20) # value, in pixel, of the grid translation from (0, 0)
+	
+	draw_multiple_lines(target_img, True, offset, len(img_black_white), case_length) # drawing the lines
+	draw_multiple_lines(target_img, False, offset, len(img_black_white[0]), case_length) # drawing the columns
+
 if __name__ == "__main__" : 
 
 	if len(sys.argv) < 2 :
@@ -88,48 +129,7 @@ if __name__ == "__main__" :
 	img = numpy.zeros((height*case_length+200,width*case_length+200, 3),numpy.uint8)
 	img.fill(255)
 
-	cumulated_case_length = 0	
-	offset = int(len(img)*3/20) # value, in pixel, of the grid translation from (0, 0)
-	for row in range(len(img_black_white)+1) :
-
-		x_start = offset + cumulated_case_length
-		y_start = offset
-		
-		x_end = offset + cumulated_case_length 
-		y_end = case_length * len(img_black_white) + offset
-
-		start_point = (x_start, y_start)
-		end_point = (x_end, y_end)
-		cv2.line(
-			img,
-			start_point,
-			end_point,
-			(0, 0, 0),
-			1
-		)
-
-		cumulated_case_length += case_length
-
-	cumulated_case_length = 0	
-	for column in range(len(img_black_white[0])+1) :
-
-		x_start = offset 
-		y_start = offset + cumulated_case_length
-		
-		x_end = case_length * len(img_black_white[0]) + offset
-		y_end = offset + cumulated_case_length
-
-		start_point = (x_start, y_start)
-		end_point = (x_end, y_end)
-		cv2.line(
-			img,
-			start_point,
-			end_point,
-			(0, 0, 0),
-			1
-		)
-
-		cumulated_case_length += case_length
+	draw_picross_grid(img_black_white, img, case_length)
 
 	position = (10, 30)
 	cv2.putText(
