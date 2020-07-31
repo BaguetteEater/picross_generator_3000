@@ -134,7 +134,7 @@ def get_list_element_max_length (lists:List[List]) -> int :
 
 def draw_numbers (isCol:bool, idx:int, number_size:int, x_start:int, y_start:int, case_length:int, blocks_number:List[List], target_img:List[List]) :
 
-	x_start_number = x_start + int(case_length/3)
+	x_start_number = x_start + int(case_length*1.1/4)
 	y_start_number = y_start + int(case_length*1.8/3)
 	for black_blocks_in_line in blocks_number[idx] :
 		
@@ -198,7 +198,7 @@ def draw_picross_outlines (offset:int, row_blocks:List[List], col_blocks:List[Li
 	draw_one_picross_outline(False, number_size, row_blocks, target_img, case_length, offset)
 
 def draw_picross_grid(img_black_white:List[List], counted_blocks:Tuple[List, List], target_img:List[List], case_length:int) :
-	offset = int(len(target_img)*5/20) # value, in pixel, of the grid translation from (0, 0)
+	offset = int(len(target_img)*3/20) # value, in pixel, of the grid translation from (0, 0)
 	
 	draw_multiple_lines(target_img, True, offset, len(img_black_white), case_length) # drawing the lines
 	draw_multiple_lines(target_img, False, offset, len(img_black_white[0]), case_length) # drawing the columns
