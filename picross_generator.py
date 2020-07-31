@@ -64,6 +64,9 @@ def count_blocks(img:List[List]) -> Tuple[List, List] :
 
 	return (line_blocks, col_blocks)
 
+# This function encapsulate the function cv2.line() to reduce the number of parameter needed
+# The line drawn will be always 1 pixel large and black
+# It returns nothing
 def draw_line(img:List[List], start_point:Tuple[int, int], end_point:Tuple[int, int]) :
 
 	cv2.line(
@@ -73,6 +76,20 @@ def draw_line(img:List[List], start_point:Tuple[int, int], end_point:Tuple[int, 
 			(0, 0, 0),
 			1
 		)
+
+# This function encapsulate the function cv2.putText() to reduce the number of parameter needed
+# The text written will always have 0.5 font size, 1 font stoke and it will be written in black colored Hershey Simplex
+# It returns nothing
+def write_text(img:List[List], text:str, text_position:Tuple[int, int]) :
+	cv2.putText(
+					img, # numpy array on which text is written
+					text, #text
+					text_position, # position at which writing has to start
+					cv2.FONT_HERSHEY_SIMPLEX, # font family
+					0.5, # font size
+					(0, 0, 0, 0), # font color
+					1 # font stroke
+				)
 
 def draw_multiple_lines(target_img:List[List], is_row_lines:bool, offset:int, lines_in_img:int, case_length:int):
 	
@@ -99,11 +116,94 @@ def draw_multiple_lines(target_img:List[List], is_row_lines:bool, offset:int, li
 
 		cumulated_case_length += case_length
 
-def draw_picross_grid(img_black_white:List[List], target_img:List[List], case_length:int) :
-	offset = int(len(target_img)*3/20) # value, in pixel, of the grid translation from (0, 0)
+# This function return the length of the longest list element within a list
+# If the list of list is empty, it will return -1
+# It returns an integer
+def get_list_element_max_length (lists:List[List]) -> int :
+
+	if len(lists) == 0 :
+		return -1
+
+	max_length = len(lists[0])
+	for l in lists :
+
+		if len(l) > max_length :
+			max_length = len(l)
+
+	return max_length
+
+def draw_numbers (isCol:bool, idx:int, number_size:int, x_start:int, y_start:int, case_length:int, blocks_number:List[List], target_img:List[List]) :
+
+	x_start_number = x_start + int(case_length/3)
+	y_start_number = y_start + int(case_length*1.8/3)
+	for black_blocks_in_line in blocks_number[idx] :
+		
+		text_position = (x_start_number, y_start_number)
+		write_text(
+			target_img, # numpy array on which text is written
+			str(black_blocks_in_line), #text
+			text_position, # position at which writing has to start
+		)
+
+		if isCol :
+			y_start_number += number_size
+		else :
+			x_start_number += number_size
+
+def draw_one_picross_outline (isCol:bool, number_size:int, blocks_number:List[List], target_img:List[List], case_length:int, offset:int) :
+
+	max_length = get_list_element_max_length(blocks_number)
+
+	if isCol : # Am I drawing the numbers on the top (isCol = True) or the numbers on the left ? (isCol = False)
+		y_end = offset
+		y_start = offset - (max_length * number_size)
+	else :
+		x_end = offset
+		x_start = offset - (max_length * number_size)
+
+	cumulated_case_length = 0
+	
+	for idx in range(len(blocks_number)+1) :
+		
+		if isCol :
+			x_start = x_end = offset + cumulated_case_length
+		else :
+			y_start = y_end = offset + cumulated_case_length
+
+		start_point = (x_start, y_start)
+		end_point = (x_end, y_end)
+		draw_line(target_img, start_point, end_point)
+
+		cumulated_case_length += case_length
+
+		if idx < len(blocks_number) : # if i am not drawing the last line
+			
+			draw_numbers(
+				isCol, 
+				idx, 
+				number_size, 
+				x_start, 
+				y_start, 
+				case_length, 
+				blocks_number, 
+				target_img
+			)
+
+
+def draw_picross_outlines (offset:int, row_blocks:List[List], col_blocks:List[List], target_img:List[List], case_length:int) :
+
+	number_size = 25 # size in pixel of a number character on the img
+	
+	draw_one_picross_outline(True, number_size, col_blocks, target_img, case_length, offset)
+	draw_one_picross_outline(False, number_size, row_blocks, target_img, case_length, offset)
+
+def draw_picross_grid(img_black_white:List[List], counted_blocks:Tuple[List, List], target_img:List[List], case_length:int) :
+	offset = int(len(target_img)*5/20) # value, in pixel, of the grid translation from (0, 0)
 	
 	draw_multiple_lines(target_img, True, offset, len(img_black_white), case_length) # drawing the lines
 	draw_multiple_lines(target_img, False, offset, len(img_black_white[0]), case_length) # drawing the columns
+
+	draw_picross_outlines(offset, counted_blocks[0], counted_blocks[1], target_img, case_length)
 
 if __name__ == "__main__" : 
 
@@ -119,7 +219,7 @@ if __name__ == "__main__" :
 	for row in img_black_white: 
 		print(row)
 
-	line, col = count_blocks(img_black_white)
+	counted_blocks = count_blocks(img_black_white)
 
 	height = len(img_black_white)
 	width = len(img_black_white[0])
@@ -129,20 +229,6 @@ if __name__ == "__main__" :
 	img = numpy.zeros((height*case_length+200,width*case_length+200, 3),numpy.uint8)
 	img.fill(255)
 
-	draw_picross_grid(img_black_white, img, case_length)
-
-	position = (10, 30)
-	cv2.putText(
-		img, #numpy array on which text is written
-		"Python Examples", #text
-		position, #position at which writing has to start
-		cv2.FONT_HERSHEY_SIMPLEX, #font family
-		0.5, #font size
-		(0, 0, 0, 0), #font color
-		1 #font stroke
-	)
-
+	draw_picross_grid(img_black_white, counted_blocks, img, case_length)
 
 	cv2.imwrite('picross.png', img)
-	cv2.imshow('image',img)
-	cv2.waitKey(0)
